@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>图像相似度引擎</title>
+    <style>
+        .fl{
+            float: left;
+        }
+        .fr{
+            float: right;
+        }
+        .text_center{
+            text-align: center;
+        }
+        .box{
+            width: 1200px;
+            height: 500px;
+            margin: 0 auto;
+        }
+        .border{
+            border:2px solid #000;
+        }
+        .btn{
+            width: 70px;
+            height: 30px;
+            line-height: 30px;
+            padding: 10px 30px;
+            background-color: #ccc;
+            border-radius: 3px;
+        }
+        .pic{
+            width: 500px;
+            height: 400px;
+            overflow: hidden;
+        }
+        #img{
+            width: 100%;
+        }
+    </style>
+    <script src="https://cdn.bootcss.com/jquery/1.11.0/jquery.min.js"></script>
+</head>
+<body>
+    <h1 class="text_center">图像相似度引擎</h1>
+    <div class="box">
+        <!-- <form target="posthere" action="http://yun.chinadream.org:888/paper/check_v2" method="post" enctype="multipart/form-data"> -->
+            <span>上传图片: <input type="file" name="file" id="file" onchange="setImg()"/></span>
+            <span>匹配图片数量: <input type="text" name="limit" id="limit" /></span>
+            <input type="submit" value="执行操作" id="to-submit" style="margin-left:50px" />
+        <!-- </form> -->
+        <div class="fl" style="margin-top:20px">
+            <p onclick="selectIframe()">上传的图片</p>
+            <div class="pic fl border" style="margin-top:3px;">
+                <img src="" id='img'>
+            </div>
+        </div>
+        <div class="fl" style="margin-top:20px">
+            <p><span>卡方值:</span><input type="text" id="w_value"><span style="margin-left:105px;">匹配结果</span></p>
+            <!-- <iframe id="frame" class="fl" name="posthere"  scrolling="no" style="width:500px;height:500px;margin-left:100px;"></iframe> -->
+            <div class="pic fl border" id="result" style="position:relative;margin-left:100px;">
+                
+            </div>
+        </div>
+    </div>
+    <p style="padding-right:350px;">
+        <button class="fr" onclick="next()">下一张</button>
+        <button class="fr" style="margin-right:100px;" onclick="pre()">上一张</button>
+    </p>
+    <p>题目：使用python机器学习建立图像相似度引擎</p>
+    <p>学号：1405110119</p>
+    <p>姓名：杨乾</p>
+    <p>指导老师：刘光蓉</p>
+    <!-- <input type="file" id="file"> -->
+    <script>
+        var imgArr =  [];
+        var index  = 0;
+        var value;
+        var imgHeader = '<img style="position:absolute;top:0;left:0;width:100%" src="';
+        // 「id」是为了后面提取「code」
+        var imgCenter = '" id="';
+        var imgfooter = '">';
+        var setImg = function(){
+            document.getElementById('img').src=URL.createObjectURL(document.getElementById('file').files[0])
+        }
+        // var selectIframe = function(){
+        //     console.log($("#frame").innerHtml)
+        // }
+        $('#to-submit').on('click', function () {
+        // get real file object
+        var fileObj = document.getElementById('file').files[0];
+        // get limit
+        var limit = $('#limit').val();
+        // print limit
+        console.info(limit);
+
+        // handle misstake
+        if (fileObj === null || typeof (fileObj) === "undefined") {
+            alert('file not exisits');
+        }
+        if (limit === null || limit === '') {
+            alert('limit should be 1~5');
+        }
+
+        // initial form-data
+        var formData = new FormData();
+        // composite form-data
+        formData.append('file', fileObj);
+        formData.append('limit', limit);
+        // print form-data
+        console.info(formData);
+
+        $.ajax({
+            url: 'http://yun.chinadream.org:888/paper/check_v2',
+            type: 'POST',
+            data: formData,
+            // 禁用「Ajax」缓存「Form」
+            // 不是必选项
+            cache: false,
+            // 禁用「Jquery」自动处理「返回结果」
+            processData: false,
+            //「ContentType」不可设置为「multipart/form-data」
+            // 因为「Ajax」模拟「Form」的时候
+            // 真正的「Request Header」是「multipart/form-data;boundary=(这里是随机字符串作为字段分隔符)」
+            contentType: false,
+            // 强制转换「返回结果」为「JSON」
+            dataType: 'json',
+            success: function (cb) {
+                console.info(cb);
+                // this is result handler
+                if (cb === null) {
+                    alert('got an error');
+                }
+                // composite img
+                // 初始化避免报错
+                var item={
+                    url:'',
+                    code:''
+                };
+                // 「for in」遍历性能最好
+                // 这里用「for of」同样是避免报错
+                
+                // for (item of cb) {
+                //     // insert img
+                //     $('#result').append(imgHeader + item.url + imgCenter + item.code + imgfooter);
+                // }
+                // $('#result').show();
+                imgArr = cb;
+                value = imgArr[0].w;
+                $('#result').append(imgHeader + imgArr[0].url + imgCenter + imgArr[0].code + imgfooter);
+                $('#w_value').val(value);
+                // for(var i=0;i<imgArr.length;i++){
+                //     $('#result').append(imgHeader + imgArr[i].url + imgCenter + imgArr[i].code + imgfooter);
+
+                // }
+                //默认显示第一张图片，卡方值为第一张图片对应的值。
+            },
+            error: function (error) {
+                console.warn(error);
+            }
+        });
+    });
+        function imgHandle(){
+            $('#result img').hide();
+            $('#result').append(imgHeader + imgArr[index].url + imgCenter + imgArr[index].code + imgfooter);
+            $('#w_value').val(imgArr[index].w);
+        }
+        function pre(){
+            if(index>0){
+                index--;
+                imgHandle();
+            }
+            
+        }
+        function next(){
+            if(index<imgArr.length-1){
+                index++;
+                imgHandle();
+            }
+        }
+    </script>
+</body>
+</html>
